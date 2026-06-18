@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Count Good Nodes — DFS Visualization</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a1a;
+            color: #e0e0f0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px 20px 10px;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }
+
+        .header p {
+            color: #8888aa;
+            font-size: 0.9rem;
+        }
+
+        .main-container {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1300px;
+            margin: 0 auto;
+            height: calc(100vh - 100px);
+        }
+
+        .tree-panel {
+            flex: 1.2;
+            background: linear-gradient(145deg, #111128, #0d0d20);
+            border: 1px solid #1e1e3a;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tree-panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #1e1e3a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tree-panel-header h2 {
+            font-size: 1rem;
+            color: #a0a0c0;
+            font-weight: 600;
+        }
+
+        .count-badge {
+            background: linear-gradient(135deg, #1a1a3e, #252550);
+            border: 1px solid #3b3b6e;
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: #a78bfa;
+            transition: all 0.3s ease;
+        }
+
+        .count-badge.updated {
+            background: linear-gradient(135deg, #2d1a4e, #3d2560);
+            border-color: #a78bfa;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(167, 139, 250, 0.3);
+        }
+
+        .tree-canvas {
+            flex: 1;
+            position: relative;
+        }
+
+        svg.tree-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .info-panel {
+            flex: 0.8;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .state-card {
+            background: linear-gradient(145deg, #111128, #0d0d20);
+            border: 1px solid #1e1e3a;
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .state-card h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #6666aa;
+            margin-bottom: 14px;
+        }
+
+        .state-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: #0a0a1a;
+            margin-bottom: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .state-row.highlight {
+            background: #1a1a3e;
+            border: 1px solid #3b3b6e;
+            box-shadow: 0 0 15px rgba(96, 165, 250, 0.1);
+        }
+
+        .state-label { color: #8888aa; }
+        .state-value { color: #60a5fa; font-weight: 600; }
+        .state-value.good { color: #34d399; }
+        .state-value.bad { color: #f87171; }
+
+        .step-info {
+            background: linear-gradient(145deg, #111128, #0d0d20);
+            border: 1px solid #1e1e3a;
+            border-radius: 16px;
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .step-info h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #6666aa;
+            margin-bottom: 14px;
+        }
+
+        .step-message {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #c0c0e0;
+        }
+
+        .step-message .highlight-val {
+            display: inline-block;
+            background: linear-gradient(135deg, #1a1a3e, #252550);
+            border: 1px solid #3b3b6e;
+            border-radius: 6px;
+            padding: 1px 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: #a78bfa;
+        }
+
+        .step-message .good-text {
+            color: #34d399;
+            font-weight: 600;
+        }
+
+        .step-message .bad-text {
+            color: #f87171;
+            font-weight: 600;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            padding: 16px 20px;
+            border-top: 1px solid #1e1e3a;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #2a2a50;
+            border-radius: 10px;
+            background: linear-gradient(145deg, #151530, #1a1a38);
+            color: #c0c0e0;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: center;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: linear-gradient(145deg, #1e1e40, #252550);
+            border-color: #4a4a80;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .btn.primary {
+            background: linear-gradient(135deg, #3b3b8e, #5b4bb8);
+            border-color: #6b5bc8;
+            color: #fff;
+        }
+
+        .btn.primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #4b4b9e, #6b5bc8);
+            box-shadow: 0 4px 20px rgba(107, 91, 200, 0.3);
+        }
+
+        .call-stack {
+            background: linear-gradient(145deg, #111128, #0d0d20);
+            border: 1px solid #1e1e3a;
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .call-stack h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #6666aa;
+            margin-bottom: 14px;
+        }
+
+        .stack-frames {
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 6px;
+        }
+
+        .stack-frame {
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            background: #0a0a1a;
+            color: #8888aa;
+            border-left: 3px solid #2a2a50;
+            transition: all 0.3s ease;
+        }
+
+        .stack-frame.active {
+            background: #1a1a3e;
+            color: #60a5fa;
+            border-left-color: #60a5fa;
+            box-shadow: 0 0 10px rgba(96, 165, 250, 0.1);
+        }
+
+        .legend {
+            display: flex;
+            gap: 16px;
+            padding: 10px 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: #8888aa;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.good { background: #34d399; box-shadow: 0 0 8px rgba(52, 211, 153, 0.4); }
+        .legend-dot.bad { background: #f87171; box-shadow: 0 0 8px rgba(248, 113, 113, 0.4); }
+        .legend-dot.current { background: #60a5fa; box-shadow: 0 0 8px rgba(96, 165, 250, 0.4); }
+        .legend-dot.unvisited { background: #2a2a50; border: 1px solid #3b3b6e; }
+
+        /* Edge animation */
+        .edge-line {
+            stroke: #2a2a50;
+            stroke-width: 2;
+            transition: stroke 0.4s ease, stroke-width 0.4s ease;
+        }
+
+        .edge-line.active {
+            stroke: #60a5fa;
+            stroke-width: 2.5;
+            filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.5));
+        }
+
+        .edge-line.visited {
+            stroke: #4a4a80;
+        }
+
+        /* Path display */
+        .path-display {
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: #0a0a1a;
+            border-radius: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #8888aa;
+        }
+
+        .path-display .path-node {
+            color: #a78bfa;
+            font-weight: 600;
+        }
+
+        .path-display .path-arrow {
+            color: #4a4a80;
+            margin: 0 4px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes nodeGlow {
+            0%, 100% { filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.4)); }
+            50% { filter: drop-shadow(0 0 12px rgba(96, 165, 250, 0.7)); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Count Good Nodes in Binary Tree</h1>
+    <p>A node is <strong>good</strong> if no node in the path from root to it has a value greater than it</p>
+</div>
+
+<div class="main-container">
+    <div class="tree-panel">
+        <div class="tree-panel-header">
+            <h2>🌳 Binary Tree</h2>
+            <div class="count-badge" id="countBadge">Good Nodes: 0</div>
+        </div>
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot unvisited"></div> Unvisited</div>
+            <div class="legend-item"><div class="legend-dot current"></div> Current</div>
+            <div class="legend-item"><div class="legend-dot good"></div> Good Node</div>
+            <div class="legend-item"><div class="legend-dot bad"></div> Not Good</div>
+        </div>
+        <div class="tree-canvas">
+            <svg class="tree-svg" id="treeSvg" viewBox="0 0 500 340"></svg>
+        </div>
+        <div class="controls">
+            <button class="btn" id="prevBtn" disabled onclick="prevStep()">← Prev</button>
+            <button class="btn primary" id="nextBtn" onclick="nextStep()">Next →</button>
+            <button class="btn" id="autoBtn" onclick="toggleAutoPlay()">▶ Auto Play</button>
+            <button class="btn" id="resetBtn" onclick="resetVisualization()">↺ Reset</button>
+        </div>
+    </div>
+
+    <div class="info-panel">
+        <div class="state-card">
+            <h3>Current State</h3>
+            <div class="state-row highlight" id="nodeRow">
+                <span class="state-label">Current Node</span>
+                <span class="state-value" id="currentNodeVal">—</span>
+            </div>
+            <div class="state-row" id="maxRow">
+                <span class="state-label">max_so_far</span>
+                <span class="state-value" id="maxSoFarVal">—</span>
+            </div>
+            <div class="state-row" id="compareRow">
+                <span class="state-label">Comparison</span>
+                <span class="state-value" id="compareVal">—</span>
+            </div>
+            <div class="state-row" id="resultRow">
+                <span class="state-label">Result</span>
+                <span class="state-value" id="resultVal">—</span>
+            </div>
+            <div class="path-display" id="pathDisplay">
+                Path: <span class="path-node">root</span>
+            </div>
+        </div>
+
+        <div class="call-stack">
+            <h3>Call Stack</h3>
+            <div class="stack-frames" id="stackFrames">
+                <div class="stack-frame" style="color: #4a4a80; font-style: italic;">Empty</div>
+            </div>
+        </div>
+
+        <div class="step-info">
+            <h3>Step Explanation</h3>
+            <div class="step-message" id="stepMessage">
+                Press <strong>Next →</strong> to start the DFS traversal, or use <strong>Auto Play</strong> to watch it animate automatically.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Tree structure
+const tree = {
+    val: 3, id: 0, x: 250, y: 50,
+    left: {
+        val: 1, id: 1, x: 130, y: 140,
+        left: { val: 3, id: 3, x: 70, y: 230, left: null, right: null },
+        right: null
+    },
+    right: {
+        val: 4, id: 2, x: 370, y: 140,
+        left: { val: 1, id: 4, x: 310, y: 230, left: null, right: null },
+        right: { val: 5, id: 5, x: 430, y: 230, left: null, right: null }
+    }
+};
+
+// Collect all nodes and edges
+const nodes = [];
+const edges = [];
+
+function collectNodes(node, parent) {
+    if (!node) return;
+    nodes.push(node);
+    if (parent) {
+        edges.push({ from: parent, to: node, id: `edge-${parent.id}-${node.id}` });
+    }
+    collectNodes(node.left, node);
+    collectNodes(node.right, node);
+}
+collectNodes(tree, null);
+
+// Steps of the DFS traversal
+const steps = [
+    {
+        type: 'visit',
+        nodeId: 0,
+        maxSoFar: 3,
+        nodeVal: 3,
+        isGood: true,
+        newMax: 3,
+        count: 1,
+        path: [3],
+        stack: ['dfs(max=3, node=3)'],
+        activeEdge: null,
+        message: `We start at the <span class="highlight-val">root (3)</span>. The initial <span class="highlight-val">max_so_far = 3</span> (root's value).<br><br>Check: Is <span class="highlight-val">3 ≥ 3</span>? <span class="good-text">✅ YES — Good Node!</span><br><br>Update max_so_far = max(3, 3) = <span class="highlight-val">3</span>.<br>Now go <strong>left</strong> to node 1.`
+    },
+    {
+        type: 'visit',
+        nodeId: 1,
+        maxSoFar: 3,
+        nodeVal: 1,
+        isGood: false,
+        newMax: 3,
+        count: 1,
+        path: [3, 1],
+        stack: ['dfs(max=3, node=3)', 'dfs(max=3, node=1)'],
+        activeEdge: 'edge-0-1',
+        message: `Move to node <span class="highlight-val">1</span> (left child of root).<br><br>Check: Is <span class="highlight-val">1 ≥ 3</span>? <span class="bad-text">❌ NO — Not a Good Node.</span><br><br>There's a <span class="highlight-val">3</span> on the path that's greater than 1.<br>max_so_far stays <span class="highlight-val">3</span>.<br>Now go <strong>left</strong> to node 3.`
+    },
+    {
+        type: 'visit',
+        nodeId: 3,
+        maxSoFar: 3,
+        nodeVal: 3,
+        isGood: true,
+        newMax: 3,
+        count: 2,
+        path: [3, 1, 3],
+        stack: ['dfs(max=3, node=3)', 'dfs(max=3, node=1)', 'dfs(max=3, node=3)'],
+        activeEdge: 'edge-1-3',
+        message: `Move to node <span class="highlight-val">3</span> (left child of node 1).<br><br>Check: Is <span class="highlight-val">3 ≥ 3</span>? <span class="good-text">✅ YES — Good Node!</span><br><br>Even though there's a 1 on the path, the max is still 3, and 3 ≥ 3.<br>This node has no children → <strong>backtrack up!</strong>`
+    },
+    {
+        type: 'backtrack',
+        nodeId: 1,
+        count: 2,
+        path: [3, 1],
+        stack: ['dfs(max=3, node=3)', 'dfs(max=3, node=1)'],
+        activeEdge: null,
+        message: `⬆️ <strong>Backtrack</strong> to node <span class="highlight-val">1</span>.<br><br>Node 1 has no right child → <strong>backtrack again!</strong>`
+    },
+    {
+        type: 'backtrack',
+        nodeId: 0,
+        count: 2,
+        path: [3],
+        stack: ['dfs(max=3, node=3)'],
+        activeEdge: null,
+        message: `⬆️ <strong>Backtrack</strong> to root <span class="highlight-val">3</span>.<br><br>Left subtree is fully explored. Now go <strong>right</strong> to node 4.`
+    },
+    {
+        type: 'visit',
+        nodeId: 2,
+        maxSoFar: 3,
+        nodeVal: 4,
+        isGood: true,
+        newMax: 4,
+        count: 3,
+        path: [3, 4],
+        stack: ['dfs(max=3, node=3)', 'dfs(max=3, node=4)'],
+        activeEdge: 'edge-0-2',
+        message: `Move to node <span class="highlight-val">4</span> (right child of root).<br><br>Check: Is <span class="highlight-val">4 ≥ 3</span>? <span class="good-text">✅ YES — Good Node!</span><br><br>⚠️ <strong>Important:</strong> Update max_so_far = max(4, 3) = <span class="highlight-val">4</span>.<br>The max <strong>increased</strong>! Children of this node will need to beat 4, not 3.<br>Now go <strong>left</strong> to node 1.`
+    },
+    {
+        type: 'visit',
+        nodeId: 4,
+        maxSoFar: 4,
+        nodeVal: 1,
+        isGood: false,
+        newMax: 4,
+        count: 3,
+        path: [3, 4, 1],
+        stack: ['dfs(max=3, node=3)', 'dfs(max=3, node=4)', 'dfs(max=4, node=1)'],
+        activeEdge: 'edge-2-4',
+        message: `Move to node <span class="highlight-val">1</span> (left child of node 4).<br><br>Check: Is <span class="highlight-val">1 ≥ 4</span>? <span class="bad-text">❌ NO — Not a Good Node.</span><br><br>Notice max_so_far is <span class="highlight-val">4</span> here (not 3!), because node 4 updated it.<br>This node has no children → <strong>backtrack!</strong>`
+    },
+    {
+        type: 'backtrack',
+        nodeId: 2,
+        count: 3,
+        path: [3, 4],
+        stack: ['dfs(max=3, node=3)', 'dfs(max=3, node=4)'],
+        activeEdge: null,
+        message: `⬆️ <strong>Backtrack</strong> to node <span class="highlight-val">4</span>.<br><br>Now go <strong>right</strong> to node 5.`
+    },
+    {
+        type: 'visit',
+        nodeId: 5,
+        maxSoFar: 4,
+        nodeVal: 5,
+        isGood: true,
+        newMax: 5,
+        count: 4,
+        path: [3, 4, 5],
+        stack: ['dfs(max=3, node=3)', 'dfs(max=3, node=4)', 'dfs(max=4, node=5)'],
+        activeEdge: 'edge-2-5',
+        message: `Move to node <span class="highlight-val">5</span> (right child of node 4).<br><br>Check: Is <span class="highlight-val">5 ≥ 4</span>? <span class="good-text">✅ YES — Good Node!</span><br><br>max_so_far updates to <span class="highlight-val">5</span>.<br>No children → <strong>backtrack!</strong>`
+    },
+    {
+        type: 'done',
+        count: 4,
+        message: `🎉 <strong>DFS Complete!</strong><br><br>We visited all 6 nodes and found <span class="highlight-val">4 good nodes</span>: <span class="good-text">3, 3, 4, 5</span>.<br><br>The 2 non-good nodes were both <span class="bad-text">1</span>s — each had a greater value on their path from the root.`
+    }
+];
+
+let currentStep = -1;
+let autoPlayInterval = null;
+const nodeStates = {}; // 'unvisited', 'current', 'good', 'bad'
+const edgeStates = {};
+
+// Initialize
+nodes.forEach(n => nodeStates[n.id] = 'unvisited');
+edges.forEach(e => edgeStates[e.id] = 'default');
+
+function renderTree() {
+    const svg = document.getElementById('treeSvg');
+    let html = '';
+
+    // Draw edges
+    edges.forEach(e => {
+        const state = edgeStates[e.id] || 'default';
+        const cls = state === 'active' ? 'edge-line active' : state === 'visited' ? 'edge-line visited' : 'edge-line';
+        html += `<line class="${cls}" id="${e.id}" x1="${e.from.x}" y1="${e.from.y}" x2="${e.to.x}" y2="${e.to.y}" />`;
+    });
+
+    // Draw nodes
+    nodes.forEach(n => {
+        const state = nodeStates[n.id] || 'unvisited';
+        let fill, stroke, textFill, glowFilter = '';
+
+        switch(state) {
+            case 'current':
+                fill = '#1a3a6e';
+                stroke = '#60a5fa';
+                textFill = '#60a5fa';
+                glowFilter = 'style="animation: nodeGlow 1.2s infinite"';
+                break;
+            case 'good':
+                fill = '#0d3025';
+                stroke = '#34d399';
+                textFill = '#34d399';
+                break;
+            case 'bad':
+                fill = '#3d1520';
+                stroke = '#f87171';
+                textFill = '#f87171';
+                break;
+            default:
+                fill = '#1a1a30';
+                stroke = '#3b3b6e';
+                textFill = '#8888aa';
+        }
+
+        html += `<g ${glowFilter}>`;
+        html += `<circle cx="${n.x}" cy="${n.y}" r="28" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+        html += `<text x="${n.x}" y="${n.y + 1}" text-anchor="middle" dominant-baseline="middle" 
+                    fill="${textFill}" font-family="JetBrains Mono, monospace" font-size="16" font-weight="700">${n.val}</text>`;
+
+        // Result icon
+        if (state === 'good') {
+            html += `<text x="${n.x + 20}" y="${n.y - 20}" text-anchor="middle" font-size="14">✅</text>`;
+        } else if (state === 'bad') {
+            html += `<text x="${n.x + 20}" y="${n.y - 20}" text-anchor="middle" font-size="14">❌</text>`;
+        }
+
+        // max_so_far label for current node
+        if (state === 'current' && currentStep >= 0 && steps[currentStep].type === 'visit') {
+            const step = steps[currentStep];
+            html += `<rect x="${n.x - 35}" y="${n.y + 34}" width="70" height="22" rx="6" fill="#151530" stroke="#3b3b6e" stroke-width="1"/>`;
+            html += `<text x="${n.x}" y="${n.y + 48}" text-anchor="middle" dominant-baseline="middle" 
+                        fill="#a78bfa" font-family="JetBrains Mono, monospace" font-size="10" font-weight="600">max=${step.maxSoFar}</text>`;
+        }
+
+        html += `</g>`;
+    });
+
+    svg.innerHTML = html;
+}
+
+function updateUI(step) {
+    if (!step) return;
+
+    // Update count badge
+    const badge = document.getElementById('countBadge');
+    badge.textContent = `Good Nodes: ${step.count}`;
+    if (step.type === 'visit' && step.isGood) {
+        badge.classList.add('updated');
+        setTimeout(() => badge.classList.remove('updated'), 500);
+    }
+
+    if (step.type === 'visit') {
+        document.getElementById('currentNodeVal').textContent = step.nodeVal;
+        document.getElementById('maxSoFarVal').textContent = step.maxSoFar;
+        document.getElementById('compareVal').textContent = `${step.nodeVal} >= ${step.maxSoFar} ?`;
+        
+        const resultEl = document.getElementById('resultVal');
+        if (step.isGood) {
+            resultEl.textContent = '✅ Good Node!';
+            resultEl.className = 'state-value good';
+        } else {
+            resultEl.textContent = '❌ Not Good';
+            resultEl.className = 'state-value bad';
+        }
+    } else if (step.type === 'backtrack') {
+        document.getElementById('currentNodeVal').textContent = `↑ backtrack`;
+        document.getElementById('currentNodeVal').style.color = '#f0c060';
+        document.getElementById('maxSoFarVal').textContent = '—';
+        document.getElementById('compareVal').textContent = '—';
+        document.getElementById('resultVal').textContent = '—';
+        document.getElementById('resultVal').className = 'state-value';
+    } else if (step.type === 'done') {
+        document.getElementById('currentNodeVal').textContent = 'Done!';
+        document.getElementById('currentNodeVal').style.color = '#34d399';
+        document.getElementById('maxSoFarVal').textContent = '—';
+        document.getElementById('compareVal').textContent = '—';
+        document.getElementById('resultVal').textContent = `Total: ${step.count}`;
+        document.getElementById('resultVal').className = 'state-value good';
+    }
+
+    // Path display
+    if (step.path) {
+        const pathHTML = step.path.map((v, i) => 
+            `<span class="path-node">${v}</span>${i < step.path.length - 1 ? '<span class="path-arrow">→</span>' : ''}`
+        ).join('');
+        document.getElementById('pathDisplay').innerHTML = `Path: ${pathHTML}`;
+    }
+
+    // Call stack
+    if (step.stack) {
+        const stackHTML = step.stack.map((frame, i) => 
+            `<div class="stack-frame ${i === step.stack.length - 1 ? 'active' : ''}">${frame}</div>`
+        ).join('');
+        document.getElementById('stackFrames').innerHTML = stackHTML;
+    } else if (step.type === 'done') {
+        document.getElementById('stackFrames').innerHTML = '<div class="stack-frame" style="color: #34d399;">✅ All calls returned</div>';
+    }
+
+    // Step message
+    document.getElementById('stepMessage').innerHTML = step.message;
+}
+
+function nextStep() {
+    if (currentStep >= steps.length - 1) return;
+    currentStep++;
+
+    const step = steps[currentStep];
+
+    // Reset previous current node
+    Object.keys(nodeStates).forEach(id => {
+        if (nodeStates[id] === 'current') {
+            // Need to determine if it was good or bad
+            const prevVisitStep = steps.slice(0, currentStep).reverse().find(s => s.type === 'visit' && s.nodeId === parseInt(id));
+            if (prevVisitStep) {
+                nodeStates[id] = prevVisitStep.isGood ? 'good' : 'bad';
+            }
+        }
+    });
+
+    // Reset all edges first
+    edges.forEach(e => {
+        if (edgeStates[e.id] === 'active') edgeStates[e.id] = 'visited';
+    });
+
+    if (step.type === 'visit') {
+        nodeStates[step.nodeId] = 'current';
+        if (step.activeEdge) edgeStates[step.activeEdge] = 'active';
+        document.getElementById('currentNodeVal').style.color = '#60a5fa';
+    } else if (step.type === 'backtrack') {
+        // Mark the backtrack target as current briefly
+        nodeStates[step.nodeId] = 'current';
+    }
+
+    renderTree();
+    updateUI(step);
+
+    document.getElementById('prevBtn').disabled = currentStep <= 0;
+    document.getElementById('nextBtn').disabled = currentStep >= steps.length - 1;
+}
+
+function prevStep() {
+    if (currentStep <= 0) return;
+    
+    // Reset everything
+    currentStep = -1;
+    nodes.forEach(n => nodeStates[n.id] = 'unvisited');
+    edges.forEach(e => edgeStates[e.id] = 'default');
+
+    // Replay up to the previous step
+    const targetStep = arguments.length > 0 ? arguments[0] : currentStep;
+    
+    // Actually, let's just reset and replay
+    const target = parseInt(document.getElementById('nextBtn').disabled ? steps.length - 2 : currentStep);
+    currentStep = -1;
+    nodes.forEach(n => nodeStates[n.id] = 'unvisited');
+    edges.forEach(e => edgeStates[e.id] = 'default');
+    
+    // We need to go to the previous step
+    resetVisualization();
+    
+    // Replay to target
+    const replayTo = target;
+    for (let i = 0; i < replayTo; i++) {
+        currentStep++;
+        const s = steps[currentStep];
+        Object.keys(nodeStates).forEach(id => {
+            if (nodeStates[id] === 'current') {
+                const prevVisitStep = steps.slice(0, currentStep).reverse().find(st => st.type === 'visit' && st.nodeId === parseInt(id));
+                if (prevVisitStep) nodeStates[id] = prevVisitStep.isGood ? 'good' : 'bad';
+            }
+        });
+        edges.forEach(e => { if (edgeStates[e.id] === 'active') edgeStates[e.id] = 'visited'; });
+        if (s.type === 'visit') {
+            nodeStates[s.nodeId] = 'current';
+            if (s.activeEdge) edgeStates[s.activeEdge] = 'active';
+        } else if (s.type === 'backtrack') {
+            nodeStates[s.nodeId] = 'current';
+        }
+    }
+
+    renderTree();
+    if (currentStep >= 0) updateUI(steps[currentStep]);
+
+    document.getElementById('prevBtn').disabled = currentStep <= 0;
+    document.getElementById('nextBtn').disabled = currentStep >= steps.length - 1;
+}
+
+function toggleAutoPlay() {
+    const btn = document.getElementById('autoBtn');
+    if (autoPlayInterval) {
+        clearInterval(autoPlayInterval);
+        autoPlayInterval = null;
+        btn.textContent = '▶ Auto Play';
+    } else {
+        btn.textContent = '⏸ Pause';
+        autoPlayInterval = setInterval(() => {
+            if (currentStep >= steps.length - 1) {
+                clearInterval(autoPlayInterval);
+                autoPlayInterval = null;
+                btn.textContent = '▶ Auto Play';
+                return;
+            }
+            nextStep();
+        }, 2000);
+    }
+}
+
+function resetVisualization() {
+    if (autoPlayInterval) {
+        clearInterval(autoPlayInterval);
+        autoPlayInterval = null;
+        document.getElementById('autoBtn').textContent = '▶ Auto Play';
+    }
+    currentStep = -1;
+    nodes.forEach(n => nodeStates[n.id] = 'unvisited');
+    edges.forEach(e => edgeStates[e.id] = 'default');
+    renderTree();
+
+    document.getElementById('countBadge').textContent = 'Good Nodes: 0';
+    document.getElementById('currentNodeVal').textContent = '—';
+    document.getElementById('currentNodeVal').style.color = '#60a5fa';
+    document.getElementById('maxSoFarVal').textContent = '—';
+    document.getElementById('compareVal').textContent = '—';
+    document.getElementById('resultVal').textContent = '—';
+    document.getElementById('resultVal').className = 'state-value';
+    document.getElementById('pathDisplay').innerHTML = 'Path: <span class="path-node">root</span>';
+    document.getElementById('stackFrames').innerHTML = '<div class="stack-frame" style="color: #4a4a80; font-style: italic;">Empty</div>';
+    document.getElementById('stepMessage').innerHTML = 'Press <strong>Next →</strong> to start the DFS traversal, or use <strong>Auto Play</strong> to watch it animate automatically.';
+    document.getElementById('prevBtn').disabled = true;
+    document.getElementById('nextBtn').disabled = false;
+}
+
+// Initial render
+renderTree();
+</script>
+</body>
+</html>
