@@ -8,6 +8,6 @@ def find_peak(nums):
         if nums[mid] < nums[mid+1]:
             low = mid+1
         else: 
-            high = mid
+            high = mid      # we include the mid because it could be the peak  
     return high             
 print(find_peak([5,4,3,2,1]))    

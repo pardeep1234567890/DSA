@@ -1,3 +1,4 @@
+# it's all about to know the replacement needed
 def longest_repeating_char(s,k):
     left = 0 
     chars_freq = {}
@@ -15,3 +16,12 @@ def longest_repeating_char(s,k):
         max_len = max(max_len,right-left+1)    
     return max_len
 print(longest_repeating_char("ABAB",2))
+
+# Exactly right! 👏
+# max_freq only grows because we're looking for the longest valid window. A smaller max_freq would only mean we need more replacements for the same window size — that can never beat our current best answer.
+
+# Think of it this way:
+
+# max_freq = 5 means we found a window where one char appeared 5 times → we only need to replace window_size - 5 others
+# If max_freq drops to 3, we'd need window_size - 3 replacements → harder to stay within k, so the window can only be equal or smaller
+# So max_freq acts like a high watermark — it only matters when it increases, because that's the only time we can potentially find a longer valid window.

@@ -1,5 +1,4 @@
 def daily_temp(temperatures):
-    answer = []
     stack = []
     answer = [0] * len(temperatures)
     for i in range(len(temperatures)):

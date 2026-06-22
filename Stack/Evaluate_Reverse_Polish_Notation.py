@@ -24,3 +24,8 @@ def reverse_polish_notation(tokens):
 
 print(reverse_polish_notation(tokens =
 ["4","-2","/","2","-3","-","-"]))    
+
+# Simple Analogy
+# if it is not an operator then append in the stack after changing into the integer 
+# otherwise we pop the top two operand and perform operation on them and append the result in to the stack 
+# and at last return the top element
