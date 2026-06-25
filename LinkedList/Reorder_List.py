@@ -5,12 +5,14 @@ class ListNode:
 def reorder_list(head):
     fast = head
     slow = head
+
     while fast and fast.next:
         slow = slow.next
         fast = fast.next.next
-    # Here we want to split the Linked list 
+    # Here we split the list by moving the 
     second_half = slow.next 
     slow.next = None
+    # Here we reverse the linked list 
     curr = second_half
     prev = None             # i did just forget to use prev , we have to use it and it's a cruical point 
     while curr:
