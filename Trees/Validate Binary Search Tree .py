@@ -45,3 +45,18 @@ class Solution:
             else: 
                 return False
         return check_tree(float("-inf"),float("+inf"),root)
+
+def isValidBST(self,root):
+    previous_value = [float("-inf")]
+    def inorder(node):
+        if not node:
+            return True
+        left_node = inorder(node.left)
+        if node.val <= previous_value[0]:
+            return False
+        previous_value[0] = node.val
+        right_node = inorder(node.right)
+        return left_node and right_node
+    return inorder(root)
+
+  

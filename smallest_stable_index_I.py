@@ -37,7 +37,6 @@ def firstStableIndex( nums, k):
     for i in range(n):
         if max_num < nums[i]:
             max_num = nums[i]
-            # min_num = min(min_num,nums[l])
         ans[i] = max_num-ans[i]
         if ans[i]<=k:
             return i

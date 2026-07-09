@@ -21,3 +21,15 @@ def diameter_binary_tree(root):
         return 1+ max(left_height,right_height)
     height(root)
     return longest_diameter
+
+    # def diameter_binary_tree(root):
+    # def height(node):
+    #     if not node :
+    #         return (0,0)
+    #     left_height,left_diameter = height(node.left)
+    #     right_height,right_diameter = height(node.right)
+    #     diameter = left_height + right_height
+    #     longest_diameter = max(diameter,left_diameter,right_diameter)
+    #     return (1+ max(left_height,right_height),longest_diameter)
+    # height , long_diameter = height(root)
+    # return long_diameter
