@@ -1,4 +1,4 @@
-# i did the mistake that i am stroing the data in the string but i should do it in the list 
+# i did the mistake that i am storing the data in the string but i should do it in the list 
 # def reverse_words(s):
 #     l = []
 #     l = s.split()
